@@ -60,7 +60,13 @@ begin
             continue;
         end
         else if choose = 2 then begin
+            if soSach = 0 then begin
+                    writeln('Không có sách!, enter để back về menu: ');
+                    readln;
+                    continue;
+            end;
             for z:=0 to soSach-1 do begin
+                
                 writeln('[',z+1,'] Tên sách: ',dsBook[z].tenSach,' || Tác giả: ',dsBook[z].tacGia,' || Gía: ',dsBook[z].Price);
                 
             end;
@@ -71,7 +77,9 @@ begin
             begin
                 money := money - dsBook[chon].Price;
                 soSach := soSach - 1;
-                writeln('Mua thành công!');
+                writeln('Mua thành công!, enter để back về menu: ');
+                readln;
+                continue;
             end
             else    
                 writeln('Không đủ tiền!');
@@ -80,9 +88,9 @@ begin
             write('Nạp số tiền muốn nạp: ');
             readln(naptien);
             money := money + naptien;
-            write('Nạp tiền thành công!');
-        write('Enter để về menu');
-        
-        readln;
+            write('Nạp tiền thành công!, enter để back về menu: ');
+            readln;
+            continue;
+            
     end;
 end.
