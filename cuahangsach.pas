@@ -82,7 +82,9 @@ begin
                 continue;
             end
             else    
-                writeln('Không đủ tiền!');
+                writeln('Không đủ tiền!, enter để back về menu: ');
+                readln;
+                continue;
         end
         else
             write('Nạp số tiền muốn nạp: ');
