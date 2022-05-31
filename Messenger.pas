@@ -39,8 +39,8 @@ const
         (*[2]*) (Number:2;Title:'Thêm bạn bè'),
         (*[3]*) (Number:3;Title:'Chấp nhận lời mời'),
         (*[4]*) (Number:4;Title:'Nhắn tin'),
-        (*[5]*) (Number:1;Title:'Xóa bạn bè'),
-        (*[6]*) (Number:1;Title:'Chuyển tài khoản')
+        (*[5]*) (Number:5;Title:'Xóa bạn bè'),
+        (*[6]*) (Number:6;Title:'Chuyển tài khoản')
     );
     DataMenu_LEN = 5;
     (*Text action*)
