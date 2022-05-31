@@ -73,6 +73,8 @@ const
     msg_ID_ = ' || ID: ';
     msg_VUONG_2 = ']';
     msg_IV = 'Bạn chưa có tài khoản hãy tạo một tài khoản!';
+    msg_CIR = '(';
+    msg_CIR_2 = ')';
     (*Text online*)
     msg_ONLINE_PP = 'Số người online: ';
     msg_OFFLINE_PP = 'Số người offline: ';
@@ -210,7 +212,7 @@ begin
             end;
             
         if boTemp = True then begin
-            writeln(msg_WELCOME,myAccount.fullName);
+            writeln(msg_WELCOME,myAccount.fullName,msg_CIR,myAccount.Alias,msg_CIR_2);
             writeln(msg_FRIENDS,myAccount.Friends);
             if myAccount.iStatus = True then begin
                 writeln(msg_STATUS_ACC,msg_ACTIVE_ACC);
@@ -220,7 +222,7 @@ begin
         end;
         
         for a:=0 to DataMenu_LEN do begin
-            writeln('[',DataMenu[a].Number,'] ',DataMenu[a].Title);
+            writeln(msg_VUONG,DataMenu[a].Number,msg_VUONG_2,' ',DataMenu[a].Title);
         end;
         write(msg_CHOOSE_FUNCTION);
         readln(ask1);
