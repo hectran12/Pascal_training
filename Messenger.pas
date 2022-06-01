@@ -9,6 +9,7 @@ type
                 Bio : string;
                 iStatus : boolean;
                 Friends : integer;
+                Friends_list : string;
                 idAcc : longInt;
               end;
     MESSAGE = record
@@ -19,12 +20,13 @@ type
     FORWARD_ = record
                 Author : ACCOUNT;
                 MESSAGE : Pchar;
-                toFriend : array[0..100] of ACCOUNT;
+                toFriend : array[0..0] of ACCOUNT;
                end;
     MENU_ITEM = record
                  Number : longInt;
                  Title : string;
                 end;
+
 (*MESSAGE BAR*)
 const
     (*Data board*)
@@ -89,12 +91,17 @@ const
     msg_STATUS_ACC = 'Trạng thái: ';
     msg_ACTIVE_ACC = 'Hoạt động';
     msg_OFFLINE_ACC = 'Không hoạt động!';
+    
+    (*ADD FRIENDS*)
+    msg_ADD_FR = 'Nhập vị trí bạn muốn kết bạn (ex 1 2 3): ';
 var 
     is_Active : boolean;
     
     (*Support variables*)
     a : integer; (*for 1*)
+
     x : integer; (*for 2*)
+
     ask1 : integer; (*ask 1*)
     ask2 : string; (*ask 2*)
     boTemp : boolean; (*boolean temporary*)
@@ -110,12 +117,25 @@ var
     myAccount : ACCOUNT;
     isLogin : boolean;
     Session : longInt;
-(*Function*)
+
+
+(*support procedure*)
+
+(*procedure*)
 {
     CREATE_ACCOUNT : tạo tài khoản
     MANAGE_ACCOUNT : Quản lý tài khoản
 }
 
+procedure ADD_FRIENDS ();
+begin
+    for a:=0 to AMOUNT_ACCOUNT do begin
+        writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc);
+    end;
+    write(msg_ADD_FR);
+    readln(ask2);
+    
+end;
 procedure CREATE_ACCOUNT ();
 begin
     writeln(msg_DATABASE_count,AMOUNT_ACCOUNT+1);
