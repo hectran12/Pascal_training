@@ -1,5 +1,5 @@
 program messenger;
-uses crt;
+uses crt,sysutils;
 (*type*)
 type 
     ACCOUNT = record
@@ -10,6 +10,11 @@ type
                 iStatus : boolean;
                 Friends : integer;
                 Friends_list : string;
+                inv_Friends : array[0..1000] of longInt;
+                inv_amount : integer;
+                accep_friends : array[0..1000] of integer;
+                accep_am : integer;
+                logs : array[0..1000] of string;
                 idAcc : longInt;
               end;
     MESSAGE = record
@@ -26,6 +31,13 @@ type
                  Number : longInt;
                  Title : string;
                 end;
+                
+                
+    (*split string extension*)
+    get = record
+            start : integer;
+            ends : integer;
+          end;
 
 (*MESSAGE BAR*)
 const
@@ -93,7 +105,16 @@ const
     msg_OFFLINE_ACC = 'Không hoạt động!';
     
     (*ADD FRIENDS*)
-    msg_ADD_FR = 'Nhập vị trí bạn muốn kết bạn (ex 1 2 3): ';
+    msg_ADD_FR = 'Nhập số thứ tự bạn muốn kết bạn (ex 1 2 3): ';
+    msg_NO_FR = 'Hiện không có ai để kết bạn!';
+    msg_ADD_SUCCESS = 'Gửi lời mời thành công cho ';
+    msg_IDNE = '|| ID: ';
+    msg_IS_INV = '[Đã gửi lời mời]';
+    msg_CANCEL_FR = 'Đã hủy lời mời kết bạn với ';
+    msg_YOUR_SELF = '[Tài khoản đang sử dụng]';
+    msg_NOT_ADD_YOUR_SELF = 'Không thể kết bạn với chính bản thân';
+    (*LOGOUT TEXT*)
+    msg_LOGOUT = 'Đăng xuất thành công!';
 var 
     is_Active : boolean;
     
@@ -104,22 +125,135 @@ var
 
     ask1 : integer; (*ask 1*)
     ask2 : string; (*ask 2*)
+    boTemp_2 : boolean;
     boTemp : boolean; (*boolean temporary*)
     (*Data*)
     AMOUNT_ACCOUNT : longInt;
     
     (*System data*)
     (*Không giới hạn nếu chạy trên môi trường này*)
-    Data_Account : array[0..0] of ACCOUNT;
+    Data_Account : array[0..1000] of ACCOUNT;
     Online_account : integer;
     Offline_account : integer;
     (*My account*)
     myAccount : ACCOUNT;
     isLogin : boolean;
-    Session : longInt;
+    Sessions : longInt;
 
-
+    Text : string; (*Văn bản cần tách*)
+    Result : array[0..1000] of string; (*Kí tự cần tách*)
+    amRes : integer; (*Số phần tử*)
+    status : boolean; (*Trạng thái tách*)
+   
+    Session : string; (*support length*)
+    liChar : array[0..1000] of string; (*Toàn kí tự dạng chuỗi*)
+    amAC : integer; (*Phiên*)
+    isCheck : boolean; (*Check length*)
+    (*explode variable*)
+    allText : string; (*Tất cả kí tự*)
+    allStt : integer; (*phiên*)
+    listInt : array[0..1000] of integer; (*Session*)
+    {
+        Session variales
+    }
+    y : integer;
+    z : integer;
+    listLocal : array[0..1000] of get;
 (*support procedure*)
+{
+    Lấy độ dài kí tự
+    how to use:
+        - Ghi chuỗi vào biến (*Text*)
+        - gọi hàm ra getLength()
+        - Số kí tự trả về bên trong biến (*amAC*)
+}
+procedure getLength();
+const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY, (.\+*?[^]$(){}=!<>|:-)';
+begin
+    isCheck := False;
+    amAC := 0;
+    for a:=1 to 1000 do begin
+        for y:=1 to 85 do begin
+            if Text[a] = chars[y] then begin
+                liChar[a] := Text[a]; 
+                amAC := amAC + 1;
+                isCheck := True;
+            end;
+        end;
+        if isCheck = False then begin
+                break;
+        end;
+    end;
+end;
+
+{
+    Cắt chuỗi ( 1 kí tự )
+    how to use:
+        - Ghi chuỗi vào biến (*Text*)
+        - gọi hàm ra Split('<kí tự muốn tách>')
+        - Kết quả trả về dạng array , được gán vào biến (*Result*) ( Kiểu dữ liệu mỗi phần tử là String )
+}
+procedure Split(s: string);
+begin
+    getLength();
+    amRes := -1;
+    Session := '';
+    for a:=0 to amAC do begin
+        if liChar[a] = s then begin
+            amRes := amRes + 1;
+            Result[amRes] := Session;
+            Session := '';
+        end
+        else
+            Session := Session + liChar[a];
+    end;
+    amRes := amRes + 1;
+    Result[amRes] := Session;
+end;
+
+{
+    Cắt chuỗi nhiều kí tự , theo dộ dài
+    how to use:
+        - Ghi chuỗi vào biến (*Text*)
+        - gọi hàm ra Explode_Count('<chuỗi muốn tách>','<độ dài chuỗi muốn tách>')
+        - Kết quả trả về được gán vào biến (*listLocal*)
+        - Kiểu dữ liệu trả về là get được record trong type với (*start*) và (*ends*) là 2 integer
+        - Lấy ra bằng cách như demo bên dưới
+        CÁCH SỬ DỤNG CHI TIẾT:
+        - Biến (*amRes*) là tổng số lần gặp kí tự muốn cắt trong chuỗi tìm được
+        - Lấy nó và dùng for từ 0 đến amRes
+        - Ta lấy được 2 giá trị từ 2 biến loại bản ghi là (*start*) và (*ends*)
+        - start: Lấy vị trí đầu gặp chuỗi muốn cắt
+        - ends: Lấy vị trí cuối của chuỗi đã gặp
+}
+procedure Explode_Count(s: string; len: integer);
+begin
+    getLength();
+    allText := '';
+    allStt := 0;
+    amRes := -1;
+    for a:=1 to amAC+1 do begin
+        if allStt >= len then begin
+            (*alltext*)
+            for z:=0 to allStt do begin
+                alltext := alltext + liChar[listInt[z]];
+            end;
+            (*get text Session*)
+            Session := '';
+            for z:=listInt[0] to a-1 do begin
+                Session:=Session+liChar[z];
+            end;
+            if Session = s then begin
+                amRes := amRes + 1;
+                listLocal[amRes].start := a-len;
+                listLocal[amRes].ends := a+len-len-1;
+            end;
+            allStt := 0;
+        end;
+        listInt[allStt] := a;
+        allStt := allStt + 1;
+    end;
+end;
 
 (*procedure*)
 {
@@ -127,17 +261,91 @@ var
     MANAGE_ACCOUNT : Quản lý tài khoản
 }
 
+
+procedure UPDATE_ACCOUNT_IN_DATABASE();
+begin
+    for x:=0 to AMOUNT_ACCOUNT do begin
+        if Data_Account[x].idAcc = myAccount.idAcc then begin
+            Data_Account[x] := myAccount;
+            break;
+        end;
+    end;
+end;
+
 procedure ADD_FRIENDS ();
 begin
-    for a:=0 to AMOUNT_ACCOUNT do begin
-        writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc);
+    if AMOUNT_ACCOUNT <= 0 then begin
+        writeln(msg_NO_FR);
+    end
+    else if AMOUNT_ACCOUNT > 0 then begin
+        for a:=0 to AMOUNT_ACCOUNT do begin
+            
+            boTemp_2 := False;
+            for x:=0 to myAccount.inv_amount do begin
+                if myAccount.inv_Friends[x] = Data_Account[a].idAcc then begin
+                    writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc,' ',msg_IS_INV);
+                    boTemp_2 := True;
+                    break;
+                end;
+            end;
+            if boTemp_2 = False then begin
+                if myAccount.idAcc = Data_Account[a].idAcc then begin
+                    writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc,' ',msg_YOUR_SELF);
+                
+                end
+                else
+                    writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc);
+            end;
+        end;
+        write(msg_ADD_FR);
+        readln(ask2);
+        Text := ask2;
+        getLength();
+        if amAC = 1 then begin
+            amRes := 0;
+            Result[0] := ask2;
+        end
+        else
+            Split(' ');
+        for x:=0 to amRes do begin
+            
+            boTemp_2 := False;
+            for a:=0 to myAccount.inv_amount do begin
+                
+                if myAccount.inv_Friends[a] = Data_Account[StrToInt(Result[x])-1].idAcc then begin
+                    myAccount.inv_Friends[a] := -1;
+                    boTemp_2 := True;
+                    break;
+                end;
+            end;
+
+            if boTemp_2 = False then begin
+                if myAccount.idAcc = Data_Account[StrToInt(Result[x])-1].idAcc then begin
+                    writeln(msg_NOT_ADD_YOUR_SELF);
+                    continue;
+                end;
+                myAccount.inv_amount := myAccount.inv_amount + 1;
+                myAccount.inv_Friends[myAccount.inv_amount] := Data_Account[StrToInt(Result[x])-1].idAcc;
+                Data_Account[StrToInt(Result[x])-1].accep_am := Data_Account[StrToInt(Result[x])-1].accep_am + 1;
+                Data_Account[StrToInt(Result[x])-1].accep_friends[Data_Account[StrToInt(Result[x])-1].accep_am] := myAccount.idAcc;
+                writeln(msg_ADD_SUCCESS,Data_Account[StrToInt(Result[x])-1].fullName);
+            end
+            else if boTemp_2 = True then begin
+                writeln(msg_CANCEL_FR,Data_Account[StrToInt(Result[x])-1].fullName);
+            end;
+            
+         
+        end;
+        UPDATE_ACCOUNT_IN_DATABASE();
+        
     end;
-    write(msg_ADD_FR);
-    readln(ask2);
+    
     
 end;
 procedure CREATE_ACCOUNT ();
 begin
+    myAccount.iStatus := False;
+    UPDATE_ACCOUNT_IN_DATABASE();
     writeln(msg_DATABASE_count,AMOUNT_ACCOUNT+1);
     AMOUNT_ACCOUNT := AMOUNT_ACCOUNT+1;
     write(msg_INPUT_FULLNAME);
@@ -149,18 +357,24 @@ begin
     write(msg_INPUT_Bio);
     readln(Data_Account[AMOUNT_ACCOUNT].Bio);
     Data_Account[AMOUNT_ACCOUNT].iStatus := False;
+    Randomize;
     Data_Account[AMOUNT_ACCOUNT].idAcc := Random(1000);
     for a:=0 to AMOUNT_ACCOUNT do begin
         if Data_Account[AMOUNT_ACCOUNT].idAcc = Data_Account[a].idAcc then begin
             Data_Account[AMOUNT_ACCOUNT].idAcc := Random(1000);
         end;
     end;
+    Data_Account[AMOUNT_ACCOUNT].inv_amount := -1;
+    Data_Account[AMOUNT_ACCOUNT].accep_am := -1;
     writeln(msg_REG_SUCCESS,Data_Account[AMOUNT_ACCOUNT].idAcc);
-
+    boTemp := False;
+    isLogin := False;
 end;
 
 procedure MANAGE_ACCOUNT();
 begin
+    myAccount.iStatus := False;
+    UPDATE_ACCOUNT_IN_DATABASE();
     for a:=0 to AMOUNT_ACCOUNT do begin
         writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,Data_Account[a].fullName,msg_ID_,Data_Account[a].idAcc);
     end;
@@ -174,11 +388,14 @@ begin
     end
     else
         ask1 := ask1 - 1;
+    {
     Data_Account[ask1].iStatus := True;
+    }
     myAccount := Data_Account[ask1];
     myAccount.iStatus := True;
+    UPDATE_ACCOUNT_IN_DATABASE();
     isLogin := True;
-    Session := Data_Account[ask1].idAcc;
+    Sessions := Data_Account[ask1].idAcc;
     boTemp := True;
 end;
 
@@ -187,7 +404,7 @@ begin
     Online_account := 0;
     Offline_account := 0;
     for a:=0 to AMOUNT_ACCOUNT do begin
-        if Data_Account[AMOUNT_ACCOUNT].iStatus = True then begin
+        if Data_Account[a].iStatus = True then begin
             Online_account := Online_account + 1
         end
         else
@@ -195,12 +412,25 @@ begin
     end;
 end;
 
+procedure LOGOUT();
+begin
+    for x:=0 to AMOUNT_ACCOUNT do begin
+        if Data_Account[x].idAcc = myAccount.idAcc then begin
+            Data_Account[x].iStatus := False;
+            writeln(msg_LOGOUT);
+            MANAGE_ACCOUNT();
+            break;
+        end;
+    end;
+end;
+
+
 begin
     (*setup*)
     AMOUNT_ACCOUNT := -1;
     isLogin := False;
     
-    Session := 0;
+    Sessions := 0;
     x := 0;
     boTemp := False;
     while x<1000 do begin
@@ -225,7 +455,7 @@ begin
                 continue;
             end;
             for a:=0 to AMOUNT_ACCOUNT do begin
-                if Session = Data_Account[a].idAcc then begin
+                if Sessions = Data_Account[a].idAcc then begin
                     boTemp := True;
                     
                 end
@@ -254,7 +484,7 @@ begin
             
         end
         else if ask1 = 2 then begin
-            write('so 2');
+            ADD_FRIENDS();
         end
         else if ask1 = 3 then begin
             write('so 3');
@@ -265,8 +495,12 @@ begin
         else if ask1 = 5 then begin
             write('so 5');
         end
-        else
-            write('so 6');
+        else if ask1 = 6 then begin
+            MANAGE_ACCOUNT();
+        end
+        else if ask1 = 7 then begin
+            LOGOUT();
+        end;
         write('Nhấn enter để back về menu!');
         readln;
         continue;
