@@ -301,9 +301,11 @@ begin
         readln(ask2);
         Text := ask2;
         getLength();
-        if amAC = 1 then begin
+        
+        
+        if length(Text) = 1 then begin
             amRes := 0;
-            Result[0] := ask2;
+            Result[amRes] := Text;
         end
         else
             Split(' ');
@@ -336,10 +338,10 @@ begin
             
          
         end;
-        UPDATE_ACCOUNT_IN_DATABASE();
+        
         
     end;
-    
+    UPDATE_ACCOUNT_IN_DATABASE();
     
 end;
 procedure CREATE_ACCOUNT ();
