@@ -9,7 +9,7 @@ type
                 Bio : string;
                 iStatus : boolean;
                 Friends : integer;
-                Friends_list : string;
+                Friends_list : array[0..1000] of integer;
                 inv_Friends : array[0..1000] of longInt;
                 inv_amount : integer;
                 accep_friends : array[0..1000] of integer;
@@ -115,6 +115,14 @@ const
     msg_NOT_ADD_YOUR_SELF = 'Không thể kết bạn với chính bản thân';
     (*LOGOUT TEXT*)
     msg_LOGOUT = 'Đăng xuất thành công!';
+    (*accept friend*)
+    msg_ACCEPTFR = 'Nhập số bạn muốn chấp nhận kết bạn (ex: 1 2 3): ';
+    msg_IDS_FR = 'ID: ';
+    msg_NAMES_FR = ' || TÊN: ';
+    msg_ACCEPT_SUCCESS = 'Chấp nhận kết bạn thành công với ';
+    (*Messenger text*)
+    msg_TITLE_SEND = 'Nhắn tin với ';
+    msg_SENDMESSENGER = 'Nhập tin nhắn muốn gửi: ';
 var 
     is_Active : boolean;
     
@@ -152,6 +160,8 @@ var
     (*explode variable*)
     allText : string; (*Tất cả kí tự*)
     allStt : integer; (*phiên*)
+    myBoolen : boolean;
+    listTemp : array[0..1000] of ACCOUNT;
     listInt : array[0..1000] of integer; (*Session*)
     {
         Session variales
@@ -272,6 +282,72 @@ begin
     end;
 end;
 
+
+procedure ACCEPT_FR();
+begin
+    z := -1;
+    for a:=0 to myAccount.accep_am do begin
+        y := myAccount.accep_friends[a];
+        
+        for x:=0 to AMOUNT_ACCOUNT do begin
+            if Data_Account[x].idAcc = y then begin
+                z := z+1;
+                listTemp[z] := Data_Account[x];
+                break;
+            end;
+        end;
+
+    end;
+
+    for a:=0 to z do begin
+        writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,' ',msg_IDS_FR,listTemp[a].idAcc,msg_NAMES_FR,listTemp[a].fullName);
+    end;
+    write(msg_ACCEPTFR);
+    readln(ask2);
+    Text := ask2;
+    myBoolen := False;
+    if length(Text) = 1 then begin
+        amRes := 0;
+        Result[amRes] := Text;
+    end
+    else if length(Text) > 1 then begin
+        Split(' ');
+    end
+    else
+        myBoolen := True;
+
+    if myBoolen = False then begin
+         for x:=0 to amRes do begin
+         {
+            writeln(listTemp[StrToInt(Result[x])-1].idAcc);
+         }
+            myAccount.accep_am := myAccount.accep_am - 1;
+            for z:=0 to myAccount.accep_am do begin
+                y := myAccount.accep_friends[a];
+                if listTemp[StrToInt(Result[x])-1].idAcc = y then begin
+                    myAccount.accep_friends[a] := 0;
+                end;
+            end;
+            myAccount.Friends := myAccount.Friends + 1;
+            myAccount.Friends_list[myAccount.Friends-1] := listTemp[StrToInt(Result[x])-1].idAcc;
+            writeln(msg_ACCEPT_SUCCESS,listTemp[StrToInt(Result[x])-1].fullName);
+         end;
+    end;
+    
+end;
+
+procedure SEND_MESSENGER();
+begin
+    for x:=0 to myAccount.Friends-1 do begin
+        {
+            writeln(myAccount.Friends_list[x]);
+        }
+        {
+            Mai update tiếp
+        }
+    end;
+end;
+
 procedure ADD_FRIENDS ();
 begin
     if AMOUNT_ACCOUNT <= 0 then begin
@@ -302,44 +378,50 @@ begin
         Text := ask2;
         getLength();
         
-        
+        myBoolen := False;
         if length(Text) = 1 then begin
             amRes := 0;
             Result[amRes] := Text;
         end
-        else
+        else if length(Text) > 1 then begin
             Split(' ');
-        for x:=0 to amRes do begin
-            
-            boTemp_2 := False;
-            for a:=0 to myAccount.inv_amount do begin
-                
-                if myAccount.inv_Friends[a] = Data_Account[StrToInt(Result[x])-1].idAcc then begin
-                    myAccount.inv_Friends[a] := -1;
-                    boTemp_2 := True;
-                    break;
-                end;
-            end;
+        end
+        else
+            myBoolen := True;
 
-            if boTemp_2 = False then begin
-                if myAccount.idAcc = Data_Account[StrToInt(Result[x])-1].idAcc then begin
-                    writeln(msg_NOT_ADD_YOUR_SELF);
-                    continue;
+        if myBoolen = False then begin
+            for x:=0 to amRes do begin
+                
+                boTemp_2 := False;
+                for a:=0 to myAccount.inv_amount do begin
+                    
+                    if myAccount.inv_Friends[a] = Data_Account[StrToInt(Result[x])-1].idAcc then begin
+                        myAccount.inv_Friends[a] := -1;
+                        boTemp_2 := True;
+                        break;
+                    end;
                 end;
-                myAccount.inv_amount := myAccount.inv_amount + 1;
-                myAccount.inv_Friends[myAccount.inv_amount] := Data_Account[StrToInt(Result[x])-1].idAcc;
-                Data_Account[StrToInt(Result[x])-1].accep_am := Data_Account[StrToInt(Result[x])-1].accep_am + 1;
-                Data_Account[StrToInt(Result[x])-1].accep_friends[Data_Account[StrToInt(Result[x])-1].accep_am] := myAccount.idAcc;
-                writeln(msg_ADD_SUCCESS,Data_Account[StrToInt(Result[x])-1].fullName);
-            end
-            else if boTemp_2 = True then begin
-                writeln(msg_CANCEL_FR,Data_Account[StrToInt(Result[x])-1].fullName);
+
+                if boTemp_2 = False then begin
+                    if myAccount.idAcc = Data_Account[StrToInt(Result[x])-1].idAcc then begin
+                        writeln(msg_NOT_ADD_YOUR_SELF);
+                        continue;
+                    end;
+                    myAccount.inv_amount := myAccount.inv_amount + 1;
+                    myAccount.inv_Friends[myAccount.inv_amount] := Data_Account[StrToInt(Result[x])-1].idAcc;
+                    Data_Account[StrToInt(Result[x])-1].accep_am := Data_Account[StrToInt(Result[x])-1].accep_am + 1;
+                    Data_Account[StrToInt(Result[x])-1].accep_friends[Data_Account[StrToInt(Result[x])-1].accep_am] := myAccount.idAcc;
+                    writeln(msg_ADD_SUCCESS,Data_Account[StrToInt(Result[x])-1].fullName);
+                end
+                else if boTemp_2 = True then begin
+                    writeln(msg_CANCEL_FR,Data_Account[StrToInt(Result[x])-1].fullName);
+                end;
+                
+            
             end;
             
-         
+            
         end;
-        
-        
     end;
     UPDATE_ACCOUNT_IN_DATABASE();
     
@@ -489,10 +571,11 @@ begin
             ADD_FRIENDS();
         end
         else if ask1 = 3 then begin
-            write('so 3');
+            ACCEPT_FR();
+
         end
         else if ask1 = 4 then begin
-            write('so 4');
+            SEND_MESSENGER();
         end
         else if ask1 = 5 then begin
             write('so 5');
