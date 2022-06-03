@@ -19,13 +19,13 @@ type
               end;
     MESSAGE = record
                 Author : ACCOUNT;
-                Message : Pchar;
+                Message : string;
                 toFriend : ACCOUNT;
               end;
     FORWARD_ = record
                 Author : ACCOUNT;
-                MESSAGE : Pchar;
-                toFriend : array[0..0] of ACCOUNT;
+                Message : string;
+                toFriend : string;
                end;
     MENU_ITEM = record
                  Number : longInt;
@@ -60,7 +60,11 @@ const
         (*[7]*) (Number:7;Title:'Đăng xuất')
     );
     
-
+    DataMenu_Send : array[0..1] of MENU_ITEM = (
+        (*[1]*) (Number:1;Title:'Gửi tin nhắn'),
+        (*[2]*) (Number:2;Title:'Chuyển tiếp tin nhắn')
+    );
+    DataMenu_Send_LEN = 1;
     DataMenu_LEN = 6;
     (*Text action*)
     BAR : Pchar = '==============================================';
@@ -120,9 +124,13 @@ const
     msg_IDS_FR = 'ID: ';
     msg_NAMES_FR = ' || TÊN: ';
     msg_ACCEPT_SUCCESS = 'Chấp nhận kết bạn thành công với ';
+    msg_NOT_FIND_FR = 'Không có ai gửi lời mời!';
     (*Messenger text*)
     msg_TITLE_SEND = 'Nhắn tin với ';
-    msg_SENDMESSENGER = 'Nhập tin nhắn muốn gửi: ';
+    msg_SENDMESSENGER = 'Nhập tin nhắn muốn gửi ( enter để back ): ';
+    msg_INPUT_NUMBER_NHAN = 'Nhập số muốn nhắn tin: ';
+    msg_INPUT_SEC = 'Nhập lựa chọn: ';
+    msg_ACTION_SEND = 'Đang nhắn với ';
 var 
     is_Active : boolean;
     
@@ -141,6 +149,10 @@ var
     (*System data*)
     (*Không giới hạn nếu chạy trên môi trường này*)
     Data_Account : array[0..1000] of ACCOUNT;
+    Data_Mess : array[0..1000] of MESSAGE;
+    am_Mess : integer;
+    am_Forward : integer;
+    Data_Forward : array[0..1000] of FORWARD_;
     Online_account : integer;
     Offline_account : integer;
     (*My account*)
@@ -285,54 +297,113 @@ end;
 
 procedure ACCEPT_FR();
 begin
-    z := -1;
-    for a:=0 to myAccount.accep_am do begin
-        y := myAccount.accep_friends[a];
-        
-        for x:=0 to AMOUNT_ACCOUNT do begin
-            if Data_Account[x].idAcc = y then begin
-                z := z+1;
-                listTemp[z] := Data_Account[x];
-                break;
-            end;
-        end;
-
-    end;
-
-    for a:=0 to z do begin
-        writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,' ',msg_IDS_FR,listTemp[a].idAcc,msg_NAMES_FR,listTemp[a].fullName);
-    end;
-    write(msg_ACCEPTFR);
-    readln(ask2);
-    Text := ask2;
-    myBoolen := False;
-    if length(Text) = 1 then begin
-        amRes := 0;
-        Result[amRes] := Text;
+    if myAccount.accep_am < 0 then begin
+        writeln(msg_NOT_FIND_FR);
     end
-    else if length(Text) > 1 then begin
-        Split(' ');
-    end
-    else
-        myBoolen := True;
-
-    if myBoolen = False then begin
-         for x:=0 to amRes do begin
-         {
-            writeln(listTemp[StrToInt(Result[x])-1].idAcc);
-         }
-            myAccount.accep_am := myAccount.accep_am - 1;
-            for z:=0 to myAccount.accep_am do begin
-                y := myAccount.accep_friends[a];
-                if listTemp[StrToInt(Result[x])-1].idAcc = y then begin
-                    myAccount.accep_friends[a] := 0;
+    else if myAccount.accep_am >= 0 then begin
+        z := -1;
+        for a:=0 to myAccount.accep_am do begin
+            y := myAccount.accep_friends[a];
+            
+            for x:=0 to AMOUNT_ACCOUNT do begin
+                if Data_Account[x].idAcc = y then begin
+                    z := z+1;
+                    listTemp[z] := Data_Account[x];
+                    break;
                 end;
             end;
-            myAccount.Friends := myAccount.Friends + 1;
-            myAccount.Friends_list[myAccount.Friends-1] := listTemp[StrToInt(Result[x])-1].idAcc;
-            writeln(msg_ACCEPT_SUCCESS,listTemp[StrToInt(Result[x])-1].fullName);
-         end;
+
+        end;
+
+        for a:=0 to z do begin
+            writeln(msg_VUONG,a+1,msg_VUONG_2,msg_KIEM,' ',msg_IDS_FR,listTemp[a].idAcc,msg_NAMES_FR,listTemp[a].fullName);
+        end;
+        write(msg_ACCEPTFR);
+        readln(ask2);
+        Text := ask2;
+        myBoolen := False;
+        if length(Text) = 1 then begin
+            amRes := 0;
+            Result[amRes] := Text;
+        end
+        else if length(Text) > 1 then begin
+            Split(' ');
+        end
+        else
+            myBoolen := True;
+
+        if myBoolen = False then begin
+            for x:=0 to amRes do begin
+            {
+                writeln(listTemp[StrToInt(Result[x])-1].idAcc);
+            }
+                myAccount.accep_am := myAccount.accep_am - 1;
+                for z:=0 to myAccount.accep_am do begin
+                    y := myAccount.accep_friends[a];
+                    if listTemp[StrToInt(Result[x])-1].idAcc = y then begin
+                        myAccount.accep_friends[a] := 0;
+                    end;
+                end;
+                (*load friend cho bên gửi*)
+
+                for z:=0 to AMOUNT_ACCOUNT do begin
+                    if Data_Account[z].idAcc = listTemp[StrToInt(Result[x])-1].idAcc then begin
+                        Data_Account[z].Friends := Data_Account[z].Friends + 1;
+                        Data_Account[z].Friends_list[Data_Account[z].Friends-1] := myAccount.idAcc;
+                        break;
+                    end;
+                end;
+
+                myAccount.Friends := myAccount.Friends + 1;
+                myAccount.Friends_list[myAccount.Friends-1] := listTemp[StrToInt(Result[x])-1].idAcc;
+                writeln(msg_ACCEPT_SUCCESS,listTemp[StrToInt(Result[x])-1].fullName);
+            end;
+        end;
     end;
+    UPDATE_ACCOUNT_IN_DATABASE();
+    
+end;
+
+
+
+procedure SEND();
+begin
+    while x<1000 do begin
+        clrscr;
+        writeln(BAR);
+        writeln(msg_ACTION_SEND,Data_Account[a].fullName,' ',msg_CIR,Data_Account[a].Alias,msg_CIR_2);
+        writeln(BAR);
+        for y:=0 to am_Mess do begin
+            if Data_Mess[y].Author.idAcc = myAccount.idAcc then begin
+                if Data_Mess[y].toFriend.idAcc = Data_Account[a].idAcc then begin
+                    writeln(msg_VUONG,Data_Mess[y].Author.fullName,msg_VUONG_2,' ',msg_KIEM,' ',Data_Mess[y].Message);
+                end;
+            end
+            else if Data_Mess[y].toFriend.idAcc = myAccount.idAcc then begin
+                if Data_Mess[y].Author.idAcc = Data_Account[a].idAcc then begin
+                    writeln(msg_VUONG,Data_Mess[y].Author.fullName,msg_VUONG_2,' ',msg_KIEM,' ',Data_Mess[y].Message);
+                end;
+            end;
+        end;
+        {
+            chưa có
+        }
+
+        writeln(BAR);
+        write(msg_SENDMESSENGER);
+        am_Mess := am_Mess + 1;
+        readln(Data_Mess[am_Mess].Message);
+        if Data_Mess[am_Mess].Message = '' then begin
+            am_Mess := am_Mess - 1;
+            break;
+        end;
+        Data_Mess[am_Mess].Author := myAccount;
+        Data_Mess[am_Mess].toFriend := Data_Account[a];
+
+    end;
+
+    (*load tin nhắn*)
+    
     
 end;
 
@@ -345,8 +416,53 @@ begin
         {
             Mai update tiếp
         }
+        for a:=0 to AMOUNT_ACCOUNT do begin
+            if Data_Account[a].idAcc = myAccount.Friends_list[x] then begin
+                write(msg_VUONG,x+1,msg_VUONG_2,msg_KIEM,msg_TITLE_SEND,Data_Account[a].fullName, ' ',msg_VUONG);
+                if Data_Account[a].iStatus = True then begin
+                    write(msg_ACTIVE_ACC);
+                end
+                else
+                    write(msg_OFFLINE_ACC);
+                writeln(msg_VUONG_2);
+                break;
+            end;
+        end;
+
+
     end;
+
+    write(msg_INPUT_NUMBER_NHAN);
+    readln(ask1);
+
+    for a:=0 to AMOUNT_ACCOUNT do begin
+            if Data_Account[a].idAcc = myAccount.Friends_list[ask1-1] then begin
+                while x<1000 do begin
+                    clrscr;
+                    writeln(BAR);
+                    writeln(msg_ACTION_SEND,Data_Account[a].fullName);
+                    writeln(BAR);
+                    for x:=0 to DataMenu_Send_LEN do begin
+                        writeln(msg_VUONG,DataMenu_Send[x].Number,msg_VUONG_2,' ',DataMenu_Send[x].Title);
+                    end;
+                    writeln(BAR);
+                    write(msg_INPUT_SEC);
+                    readln(ask1);
+
+                    if ask1 = 1 then begin
+                        SEND();
+                    end
+                    else if ask1 = 2 then begin
+                        write('hai');
+                    end
+                    else
+                        break;
+                end;
+            end;
+    end;
+
 end;
+
 
 procedure ADD_FRIENDS ();
 begin
@@ -511,6 +627,8 @@ end;
 
 begin
     (*setup*)
+    am_Mess := -1;
+    am_Forward := -1;
     AMOUNT_ACCOUNT := -1;
     isLogin := False;
     
