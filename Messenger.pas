@@ -114,7 +114,7 @@ const
     msg_ADD_SUCCESS = 'Gửi lời mời thành công cho ';
     msg_IDNE = '|| ID: ';
     msg_IS_INV = '[Đã gửi lời mời]';
-    msg_CANCEL_FR = 'Đã hủy lời mời kết bạn với ';
+    msg_CANCEL_FR = 'Đã gửi lời trước đó với ';
     msg_YOUR_SELF = '[Tài khoản đang sử dụng]';
     msg_NOT_ADD_YOUR_SELF = 'Không thể kết bạn với chính bản thân';
     (*LOGOUT TEXT*)
@@ -131,6 +131,17 @@ const
     msg_INPUT_NUMBER_NHAN = 'Nhập số muốn nhắn tin: ';
     msg_INPUT_SEC = 'Nhập lựa chọn: ';
     msg_ACTION_SEND = 'Đang nhắn với ';
+    (*Tin nhắn chuyển tiếp*)
+    msg_FORW_SEND = 'Nhập tin nhắn muốn chuyển tiếp: ';
+    msg_FORW_WITH_FR = 'Nhập số bạn muốn chuyển tiếp (ex 1 2 3): ';
+    msg_SUCCESS_FORW = 'Chuyển tiếp thành công cho ';
+    msg_ADD_MESS_FORW = '[Chuyển tiếp]';
+    msg_PEOP_FORW = 'người';
+    (*Msg remove friends*)
+    msg_RM_FR = 'Nhập số bạn bè muốn xóa (ex 1 2 3): ';
+    msg_LIST_FR = '[Danh sách bạn bè]';
+    msg_SUCCESS_RM_FR = 'Xóa thành công ';
+    msg_NO_FRIENDS = 'Không có bạn bè!';
 var 
     is_Active : boolean;
     
@@ -141,6 +152,7 @@ var
 
     ask1 : integer; (*ask 1*)
     ask2 : string; (*ask 2*)
+    ask3 : string;
     boTemp_2 : boolean;
     boTemp : boolean; (*boolean temporary*)
     (*Data*)
@@ -152,6 +164,7 @@ var
     Data_Mess : array[0..1000] of MESSAGE;
     am_Mess : integer;
     am_Forward : integer;
+    
     Data_Forward : array[0..1000] of FORWARD_;
     Online_account : integer;
     Offline_account : integer;
@@ -407,6 +420,115 @@ begin
     
 end;
 
+procedure FORWARD_MESS();
+begin
+    {
+        msg_FORW_SEND = 'Nhập tin nhắn muốn chuyển tiếp';
+        msg_FORW_WITH_FR = 'Nhập số bạn muốn chuyển tiếp (ex 1 2 3): ';
+        msg_SUCCESS_FORW = 'Chuyển tiếp thành công cho ';
+        msg_PEOP_FORW = 'người';
+    }
+
+    write(msg_FORW_SEND);
+    readln(ask3);
+    
+    for x:=0 to myAccount.Friends-1 do begin
+        {
+            writeln(myAccount.Friends_list[x]);
+        }
+        {
+            Mai update tiếp
+        }
+        for a:=0 to AMOUNT_ACCOUNT do begin
+            if Data_Account[a].idAcc = myAccount.Friends_list[x] then begin
+                write(msg_VUONG,x+1,msg_VUONG_2,msg_KIEM,msg_TITLE_SEND,Data_Account[a].fullName, ' ',msg_VUONG);
+                if Data_Account[a].iStatus = True then begin
+                    write(msg_ACTIVE_ACC);
+                end
+                else
+                    write(msg_OFFLINE_ACC);
+                writeln(msg_VUONG_2);
+                break;
+            end;
+        end;
+
+
+    end;
+
+    write(msg_FORW_WITH_FR);
+    readln(ask2);
+    Text := ask2;
+    boTemp_2 := False;
+    if length(ask2) = 1 then begin
+        Result[0] := ask2;
+        amRes := 0;
+    end
+    else if length(ask2) > 1 then begin
+        Split(' ');
+    end
+    else
+        boTemp_2 := True;
+    if boTemp_2 = False then begin
+        for y:=0 to amRes do begin
+                for a:=0 to AMOUNT_ACCOUNT do begin
+                    if Data_Account[a].idAcc = myAccount.Friends_list[StrToInt(Result[y])-1] then begin
+                       
+                        am_Mess := am_Mess + 1;
+                        Data_Mess[am_Mess].Message := msg_ADD_MESS_FORW+' '+ask3;
+                        if Data_Mess[am_Mess].Message = '' then begin
+                            am_Mess := am_Mess - 1;
+                            break;
+                        end;
+                        Data_Mess[am_Mess].Author := myAccount;
+                        Data_Mess[am_Mess].toFriend := Data_Account[a];
+                        writeln(msg_SUCCESS_FORW,Data_Account[a].idAcc);
+                        (*load*)
+                    
+                        break;
+                    end;
+                end;
+
+        end;
+        am_Forward := am_Forward + 1;
+        Data_Forward[am_Forward].Author := myAccount;
+        Data_Forward[am_Forward].toFriend := ask2;
+        readln;
+    end;
+end;
+
+procedure REMOVE_FRIENDS();
+begin
+    clrscr;
+    {
+        msg_RM_FR = 'Nhập số bạn bè muốn xóa (ex 1 2 3): ';
+        msg_LIST_FR = '[Danh sách bạn bè]';
+        msg_SUCCESS_RM_FR = 'Xóa thành công ';
+    }
+    if myAccount.Friends > 0 then begin
+        writeln(msg_LIST_FR);
+        for x:=0 to myAccount.Friends-1 do begin
+            for a:=0 to AMOUNT_ACCOUNT do begin
+                if Data_Account[a].idAcc = myAccount.Friends_list[x] then begin
+                    write(msg_VUONG,x+1,msg_VUONG_2,msg_KIEM,msg_TITLE_SEND,Data_Account[a].fullName, ' ',msg_VUONG);
+                    if Data_Account[a].iStatus = True then begin
+                        write(msg_ACTIVE_ACC);
+                    end
+                    else
+                        write(msg_OFFLINE_ACC);
+                        writeln(msg_VUONG_2);
+                        break;
+                end;
+            end;
+        end;
+    end
+    else
+        writeln(msg_NO_FRIENDS);
+    writeln(BAR);
+    
+
+  
+
+end;
 procedure SEND_MESSENGER();
 begin
     for x:=0 to myAccount.Friends-1 do begin
@@ -453,7 +575,7 @@ begin
                         SEND();
                     end
                     else if ask1 = 2 then begin
-                        write('hai');
+                        FORWARD_MESS();
                     end
                     else
                         break;
@@ -531,6 +653,7 @@ begin
                 end
                 else if boTemp_2 = True then begin
                     writeln(msg_CANCEL_FR,Data_Account[StrToInt(Result[x])-1].fullName);
+
                 end;
                 
             
@@ -683,20 +806,18 @@ begin
         if ask1 = 1 then begin
             CREATE_ACCOUNT();
             isLogin := True;
-            
         end
         else if ask1 = 2 then begin
             ADD_FRIENDS();
         end
         else if ask1 = 3 then begin
             ACCEPT_FR();
-
         end
         else if ask1 = 4 then begin
             SEND_MESSENGER();
         end
         else if ask1 = 5 then begin
-            write('so 5');
+            REMOVE_FRIENDS();
         end
         else if ask1 = 6 then begin
             MANAGE_ACCOUNT();
