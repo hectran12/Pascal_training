@@ -1,3 +1,10 @@
+{
+    Project : Messenger dạng console
+    Ver: 0.0.1
+    Auth: Tran Trong Hoa
+}
+
+
 program messenger;
 uses crt,sysutils;
 (*type*)
@@ -13,7 +20,9 @@ type
                 inv_Friends : array[0..1000] of longInt;
                 inv_amount : integer;
                 accep_friends : array[0..1000] of integer;
+                accep_fakes : array[0..1000] of integer;
                 accep_am : integer;
+                num_fakes : integer;
                 logs : array[0..1000] of string;
                 idAcc : longInt;
               end;
@@ -74,6 +83,7 @@ const
     msg_STATUS = 'Trạng thái hoạt động ';
     msg_INPUT = 'Nhập tin nhắn muốn gửi: ';
     msg_ALL_FRIENDS = 'Tất cả bạn bè';
+    msg_BACKMENU = 'Nhấn enter để back về menu!';
     (*Change text*)
     msg_CHANGE_ACCOUNT = 'Nhập vị trí tài khoản muốn đổi: ';
     (*Text ask*)
@@ -114,7 +124,7 @@ const
     msg_ADD_SUCCESS = 'Gửi lời mời thành công cho ';
     msg_IDNE = '|| ID: ';
     msg_IS_INV = '[Đã gửi lời mời]';
-    msg_CANCEL_FR = 'Đã gửi lời trước đó với ';
+    msg_CANCEL_FR = 'Đã hủy kết bạn với ';
     msg_YOUR_SELF = '[Tài khoản đang sử dụng]';
     msg_NOT_ADD_YOUR_SELF = 'Không thể kết bạn với chính bản thân';
     (*LOGOUT TEXT*)
@@ -294,6 +304,11 @@ end;
 {
     CREATE_ACCOUNT : tạo tài khoản
     MANAGE_ACCOUNT : Quản lý tài khoản
+    ACCEPT_FR : Chấp nhận bạn bè
+    UPDATE_ACCOUNT_IN_DATABASE : Cập nhật
+    SEND : Gửi tin nhắn
+    FORWARD_MESS : Chuyển tiếp
+    ... nhiều nữa lười comment
 }
 
 
@@ -506,10 +521,11 @@ begin
     }
     if myAccount.Friends > 0 then begin
         writeln(msg_LIST_FR);
+        writeln(BAR);
         for x:=0 to myAccount.Friends-1 do begin
             for a:=0 to AMOUNT_ACCOUNT do begin
                 if Data_Account[a].idAcc = myAccount.Friends_list[x] then begin
-                    write(msg_VUONG,x+1,msg_VUONG_2,msg_KIEM,msg_TITLE_SEND,Data_Account[a].fullName, ' ',msg_VUONG);
+                    write(msg_VUONG,x+1,msg_VUONG_2,' ',Data_Account[a].fullName, ' ',msg_VUONG);
                     if Data_Account[a].iStatus = True then begin
                         write(msg_ACTIVE_ACC);
                     end
@@ -520,6 +536,46 @@ begin
                 end;
             end;
         end;
+
+        write(msg_RM_FR);
+        readln(ask2);
+        Text := ask2;
+        boTemp_2 := False;
+        if length(ask2) = 1 then begin
+            Result[0] := ask2;
+            amRes := 0;
+        end
+        else if length(ask2) > 1 then begin
+            Split(' ');
+        end
+        else
+            boTemp_2 := True;
+                            
+        myAccount.num_fakes := 0;            
+        if boTemp_2 = False then begin
+            for x:=0 to amRes do begin
+                
+                (*get friends*)
+                for a:=0 to AMOUNT_ACCOUNT do begin
+                    if Data_Account[a].idAcc = myAccount.Friends_list[StrToInt(Result[x])-1] then begin
+                        
+                        for z:=0 to myAccount.Friends-1 do begin
+                            if myAccount.Friends_list[z] <> Data_Account[a].idAcc then begin
+                                writeln(msg_SUCCESS_RM_FR,Data_Account[a].fullName);
+                                myAccount.num_fakes := myAccount.num_fakes + 1;
+                                myAccount.Friends_list[myAccount.num_fakes-1] := myAccount.Friends_list[z];
+                            end;
+                        end;
+                        
+                    end;
+                end;
+                (*load fr in myAccount*)
+                myAccount.Friends := myAccount.num_fakes;
+                
+            end;
+            UPDATE_ACCOUNT_IN_DATABASE();
+        end;
+
     end
     else
         writeln(msg_NO_FRIENDS);
@@ -529,8 +585,11 @@ begin
   
 
 end;
+
+
 procedure SEND_MESSENGER();
 begin
+
     for x:=0 to myAccount.Friends-1 do begin
         {
             writeln(myAccount.Friends_list[x]);
@@ -585,6 +644,19 @@ begin
 
 end;
 
+procedure LOAD_FRIENDS_USER();
+begin
+    Data_Account[StrToInt(Result[x])-1].num_fakes := -1;
+    for y:=0 to Data_Account[StrToInt(Result[x])-1].accep_am do begin
+        if Data_Account[StrToInt(Result[x])-1].accep_friends[y] <> myAccount.idAcc then begin
+            Data_Account[StrToInt(Result[x])-1].num_fakes :=  Data_Account[StrToInt(Result[x])-1].num_fakes + 1;
+            Data_Account[StrToInt(Result[x])-1].accep_fakes[Data_Account[StrToInt(Result[x])-1].num_fakes] := Data_Account[StrToInt(Result[x])-1].accep_friends[y];
+        end;
+    end;
+    Data_Account[StrToInt(Result[x])-1].accep_friends := Data_Account[StrToInt(Result[x])-1].accep_fakes;
+    Data_Account[StrToInt(Result[x])-1].accep_am := Data_Account[StrToInt(Result[x])-1].num_fakes;
+    UPDATE_ACCOUNT_IN_DATABASE();
+end;
 
 procedure ADD_FRIENDS ();
 begin
@@ -653,7 +725,8 @@ begin
                 end
                 else if boTemp_2 = True then begin
                     writeln(msg_CANCEL_FR,Data_Account[StrToInt(Result[x])-1].fullName);
-
+                   
+                    LOAD_FRIENDS_USER();
                 end;
                 
             
@@ -665,6 +738,8 @@ begin
     UPDATE_ACCOUNT_IN_DATABASE();
     
 end;
+
+
 procedure CREATE_ACCOUNT ();
 begin
     myAccount.iStatus := False;
@@ -703,23 +778,29 @@ begin
     end;
     write(msg_CHANGE_ACCOUNT);
     readln(ask1);
+    boTemp_2 := False;
     if ask1 > AMOUNT_ACCOUNT+1 then begin
         writeln(msg_CHANGE_LESS);
+        boTemp_2 := True;
     end
     else if ask1 < 0 then begin
         writeln(msg_CHANGE_AM);
+        boTemp_2 := True;
     end
     else
         ask1 := ask1 - 1;
     {
     Data_Account[ask1].iStatus := True;
     }
-    myAccount := Data_Account[ask1];
-    myAccount.iStatus := True;
-    UPDATE_ACCOUNT_IN_DATABASE();
-    isLogin := True;
-    Sessions := Data_Account[ask1].idAcc;
-    boTemp := True;
+    if boTemp_2 = False then begin
+        myAccount := Data_Account[ask1];
+        myAccount.iStatus := True;
+        UPDATE_ACCOUNT_IN_DATABASE();
+        isLogin := True;
+        Sessions := Data_Account[ask1].idAcc;
+        boTemp := True;
+    end;
+    
 end;
 
 procedure CHECK_ACTIVE_USER();
@@ -825,7 +906,7 @@ begin
         else if ask1 = 7 then begin
             LOGOUT();
         end;
-        write('Nhấn enter để back về menu!');
+        write(msg_BACKMENU);
         readln;
         continue;
     end;
