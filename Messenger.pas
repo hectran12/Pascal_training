@@ -1,7 +1,15 @@
 {
     Project : Messenger dạng console
-    Ver: 0.0.1
+    Ver: 0.0.1 ( cuối cùng )
     Auth: Tran Trong Hoa
+    Trong đây sử dụng các kỹ thuật chuyển đổi qua lại
+    chứ hoàn toàn không có một thuật toán phức tạp nào
+    cả, nên bạn đừng quá để ý điều đó. Bạn cũng không 
+    cần phải hiểu những dòng code này, đơn giản là tôi
+    đã làm rối nó. Nó vốn không hoàn hảo để bạn học hỏi,
+    nó chỉ là những dòng code rối, chính tôi người viết
+    ra nó còn mất hàng giờ để mò lại những cái mà tôi đã
+    viết ra.
 }
 
 
