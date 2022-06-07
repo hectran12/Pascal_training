@@ -2,14 +2,6 @@
     Project : Messenger dạng console
     Ver: 0.0.1 ( cuối cùng )
     Auth: Tran Trong Hoa
-    Trong đây sử dụng các kỹ thuật chuyển đổi qua lại
-    chứ hoàn toàn không có một thuật toán phức tạp nào
-    cả, nên bạn đừng quá để ý điều đó. Bạn cũng không 
-    cần phải hiểu những dòng code này, đơn giản là tôi
-    đã làm rối nó. Nó vốn không hoàn hảo để bạn học hỏi,
-    nó chỉ là những dòng code rối, chính tôi người viết
-    ra nó còn mất hàng giờ để mò lại những cái mà tôi đã
-    viết ra.
 }
 
 
@@ -549,6 +541,7 @@ begin
         readln(ask2);
         Text := ask2;
         boTemp_2 := False;
+      
         if length(ask2) = 1 then begin
             Result[0] := ask2;
             amRes := 0;
@@ -565,16 +558,25 @@ begin
                 
                 (*get friends*)
                 for a:=0 to AMOUNT_ACCOUNT do begin
+                    Data_Account[a].num_fakes := 0;
                     if Data_Account[a].idAcc = myAccount.Friends_list[StrToInt(Result[x])-1] then begin
-                        
+                        writeln(msg_SUCCESS_RM_FR,Data_Account[a].fullName);
                         for z:=0 to myAccount.Friends-1 do begin
-                            if myAccount.Friends_list[z] <> Data_Account[a].idAcc then begin
-                                writeln(msg_SUCCESS_RM_FR,Data_Account[a].fullName);
+                            if myAccount.Friends_list[z] <> myAccount.Friends_list[StrToInt(Result[x])-1] then begin     
                                 myAccount.num_fakes := myAccount.num_fakes + 1;
                                 myAccount.Friends_list[myAccount.num_fakes-1] := myAccount.Friends_list[z];
                             end;
                         end;
                         
+                        for z:=0 to Data_Account[a].Friends-1 do begin
+                            if Data_Account[a].Friends_list[z] <> myAccount.idAcc then begin
+                                Data_Account[a].num_fakes := Data_Account[a].num_fakes + 1;
+                                Data_Account[a].Friends_list[Data_Account[a].num_fakes-1] := Data_Account[a].Friends_list[z];
+
+                            end;
+                            
+                        end;
+                        Data_Account[a].Friends := Data_Account[a].num_fakes;
                     end;
                 end;
                 (*load fr in myAccount*)
