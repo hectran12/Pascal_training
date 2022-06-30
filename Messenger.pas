@@ -4,6 +4,7 @@
     Auth: Tran Trong Hoa
 }
 
+(*TÌM BUG MÃI KHÔNG THẤY =))*)
 
 program messenger;
 uses crt,sysutils;
